@@ -94,17 +94,24 @@ function DuckDuckGo:search(query, max_results, callback)
         response:on("data", function(chunk) chunks[#chunks + 1] = chunk end)
         response:on("end", function()
             local body = table.concat(chunks)
-            local status = classify(body, response.code)
+            local status_code = tonumber(response.statusCode or response.code)
+            local status = classify(body, status_code)
 
             if status == "access_challenge" then
-                callback({ status = status, results = {},
-                    message = "DuckDuckGo returned an automated-access challenge." })
+                callback({
+                    status = status,
+                    results = {},
+                    message = "DuckDuckGo returned an automated-access challenge.",
+                })
                 return
             end
 
             if status == "http_error" then
-                callback({ status = status, results = {},
-                    message = "DuckDuckGo returned HTTP status " .. tostring(response.code) })
+                callback({
+                    status = status,
+                    results = {},
+                    message = "DuckDuckGo returned HTTP status " .. tostring(status_code),
+                })
                 return
             end
 
@@ -123,5 +130,8 @@ function DuckDuckGo:search(query, max_results, callback)
     end)
     request:done()
 end
+
+DuckDuckGo._classify_response = classify
+DuckDuckGo._parse_results = parse_results
 
 return DuckDuckGo
